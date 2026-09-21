@@ -1,7 +1,7 @@
 # Lean Formalization of JSP-000746
 
 This repository contains a Lean 4 formalization intended for submission to the
-Justin Sun Prize as problem **JSP-000746**.
+Justin Sun Prize for problem **JSP-000746**.
 
 ## Result
 
@@ -59,11 +59,21 @@ certificate, and submits the resulting proof term to the Lean kernel for
 verification. Correctness therefore does not depend on trusting the solver or
 its UNSAT answer.
 
+## Statement correspondence
+
+The finite theorem uses the vertex set `{1, ..., n}` and requires the three
+vertices `a`, `b`, and `a + b` to be distinct and pairwise nonadjacent.
+Triangle-freeness is represented using Mathlib's `SimpleGraph.CliqueFree 3`.
+
+The SAT encoding is proved in Lean to imply exactly this finite statement,
+rather than being treated as an external computational assumption.
+
 ## Reproduction
 
 ```bash
 git clone https://github.com/Joson-CS/JSP-000746-Lean.git
 cd JSP-000746-Lean
+git checkout v1.0-proof
 lake build
 ```
 
@@ -111,10 +121,17 @@ byte-for-byte across platforms.
 
 ## Certificate provenance
 
-```text
-CaDiCaL 3.0.1
+```yaml
+CaDiCaL version: 3.0.1
+CaDiCaL source tag: rel-3.0.1
+Executable SHA-256:
+5055464418A38820E31AE2E02229E03345B749BB254B4C582C473B059625A574
+
+Solver result:
 s UNSATISFIABLE
-exit code 20
+
+Exit code:
+20
 ```
 
 ## Axiom audit
@@ -126,7 +143,7 @@ theorem reports only Lean/Mathlib's standard axioms:
 [propext, Classical.choice, Quot.sound]
 ```
 
-The proof contains no:
+The project uses no project-defined axioms or proof shortcuts such as:
 
 ```text
 sorry
