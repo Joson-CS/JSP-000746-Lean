@@ -1,0 +1,2 @@
+certificates/*.cnf -text
+certificates/*.lrat -text
