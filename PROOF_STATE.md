@@ -2,11 +2,12 @@
 
 ## 当前阶段
 
-已完成命题的精确定义、`n = 18` 有限核心 proposition、`18 → n ≥ 18`
-形式化归约、独立的有限 Boolean/CNF 编码和 soundness 桥梁，以及确定性的
-DIMACS 编号、序列化与语义桥梁。`certificates/core.cnf` 已由 Lean 定义生成并
-独立回读验证。尚未运行 SAT 求解器，也未生成或验证任何 SAT certificate；
-特别地，`certificates/core.lrat` 当前不存在。
+已完成命题的精确定义、`18 → n ≥ 18` 形式化归约、有限 Boolean/CNF 编码、
+确定性 DIMACS 导出及所有语义桥梁。CaDiCaL 3.0.1 已证明实际导出的
+`certificates/core.cnf` 为 UNSAT，并生成 `certificates/core.lrat`。Mathlib 的
+`lrat_proof` 已读取这两个实际磁盘文件，重放证书并产生 Lean kernel 检查的
+空子句推导。该推导现已正式连接到 `coreCNF`、`Finite18`、`HoldsFrom18` 和
+正整数无限图表述。
 
 项目锁定 Lean `v4.34.0` 与 Mathlib commit
 `5ed2965256430c3649e86755f9576b54eca72435`。
@@ -100,7 +101,8 @@ def Finite18 : Prop :=
     G.CliqueFree 3 → HasAdditiveIndependentTriple G
 ```
 
-`Finite18` 当前只是一个 proposition，没有被冒充为已证明 theorem。
+`Finite18` 本身仍是核心 proposition；它现已由无参数 theorem
+`finite18_proved : Finite18` 证明。
 
 ## 已证明的归约
 
@@ -294,50 +296,75 @@ SHA-256: 260b7c50fac4fcc4525f7253eb37a8750bf744cff5bb41e92a314cdea1ccab45
 tautological clause；同时确认前 816 行全为 negative triangle clauses，后
 72 行全为 positive additive clauses。
 
-## 尚未解决
+## LRAT certificate 与 kernel verification
 
-唯一未解决的数学核心是证明导出的 CNF UNSAT，从而得到 `Finite18`。本仓库
-目前没有这一 UNSAT 证明，没有 `core.lrat`，也没有加入任何自定义公理或
-占位证明。
+使用官方 CaDiCaL 3.0.1 source 构建的可执行文件对 `core.cnf` 求解，结果为
+`UNSATISFIABLE`（正常退出码 20）。完整输出保存在
+`certificates/cadical-core.log`，未经人工编辑的证明保存在
+`certificates/core.lrat`。
 
-公开资料只说明 `n ≥ 18` 的结论曾由 SAT 验证，并称该信息来自 personal
-communication；未找到可在本阶段交叉检查的独立论文、编码规范或公开
-certificate。因此，`Finite18` 的后续编码必须再次核对“a 与 b 是否必须
-不同”这一语义选择。
-
-## 后续 SAT/LRAT 路线（尚未执行）
-
-Mathlib `v4.34.0` 的接口位于：
-
-```lean
-import Mathlib.Tactic.Sat.FromLRAT
+```text
+CaDiCaL version    3.0.1
+source tag/commit  rel-3.0.1 / c60730422e758ef1cebe7aeddf2dda31c996bf04
+executable         D:\Users\admin\Desktop\JSP-000746\tools\cadical-3.0.1\build-windows\cadical.exe
+executable SHA-256 5055464418a38820e31ae2e02229e03345b749bb254b4c582c473b059625a574
 ```
 
-该模块提供 command：
-
-```lean
-lrat_proof theoremName
-  (include_str "certificates/core.cnf")
-  (include_str "certificates/core.lrat")
+```text
+core.cnf  SHA-256 260b7c50fac4fcc4525f7253eb37a8750bf744cff5bb41e92a314cdea1ccab45
+core.lrat SHA-256 2f8729bd57e5ee6d24292e2b51fc72afad884bedf5234b808615568fe9bac582
+core.lrat size    218950 bytes
 ```
 
-以及可用于 term position 的：
+`JSP000746/LRAT.lean` 使用：
 
 ```lean
-def proofTerm := from_lrat
-  (include_str "certificates/core.cnf")
-  (include_str "certificates/core.lrat")
+lrat_proof core_lrat_proof
+  (include_str "../certificates/core.cnf")
+  (include_str "../certificates/core.lrat")
 ```
 
-其 `Sat.Literal.ofInt` 明确假设输入非零，并把 DIMACS 的一基正/负整数转换为
-内部零基 variable；这与本文件已证明的 `toInt_ne_zero` 和编号方式一致。
+`lrat_proof` 的公开 theorem 是 153 个命题变量上的 reified DNF；文件进一步把
+checker 已生成并由 kernel 接受的底层证明公开为：
 
-未来阶段才会：运行支持证明输出的 solver、生成
-`certificates/core.lrat`、调用 `lrat_proof`/`from_lrat`，并把生成的命题 theorem
-适配到 `SignedDIMACSUnsatisfiable exportedDIMACSFormula`。随后依次应用
-`exportedDIMACS_unsat_implies_coreCNF_unsat`、
-`coreCNF_unsat_implies_finite18` 和 reduction theorem。当前没有假造空证书或
-LRAT theorem。
+```text
+core_lrat_proof (a₁ ... a₁₅₃ : Prop) :
+  <888 个 clause-falsification conjunction 组成的 balanced disjunction>
+```
+
+其中 triangle clause `¬e₁ ∨ ¬e₂ ∨ ¬e₃` 对应 disjunct
+`e₁ ∧ e₂ ∧ e₃`，additive clause `e₁ ∨ e₂ ∨ e₃` 对应
+`¬e₁ ∧ ¬e₂ ∧ ¬e₃`。因此它并不直接具有项目的
+`SignedDIMACSUnsatisfiable exportedDIMACSFormula` 类型。底层精确类型是：
+
+```lean
+disk_sat_fmla_proof : Sat.Fmla.proof diskSatFormula Sat.Clause.nil
+```
+
+为避免一次性归约 888 条子句造成高内存，桥接分层完成：
+
+1. `edgeToVar_val_closed` 证明 lexicographic edge 编号的闭式公式；
+2. checker 的公式拆为 816 条 triangle clauses 和 72 条 additive clauses；
+3. `diskTriangleClauses_eq_exported` 与
+   `diskAdditiveClauses_eq_exported` 分别逐 clause/literal 检查两个分块；
+4. `diskSatFormula_eq_exported` 合并两个分块；
+5. `exported_sat_fmla_proof` 把空子句推导搬到 `exportedSatFormula`；
+6. `satValuationOfDIMACS` 和 literal/clause semantic lemmas 把 Boolean DIMACS
+   满足性搬到 Mathlib `Sat.Valuation` 满足性。
+
+最终 theorem 链为：
+
+```lean
+theorem exportedDIMACS_unsatisfiable_verified :
+  SignedDIMACSUnsatisfiable exportedDIMACSFormula
+
+theorem coreCNF_unsat : Unsatisfiable coreCNF
+theorem finite18_proved : Finite18
+theorem jsp000746_holdsFrom18 : HoldsFrom18
+theorem jsp000746_positiveInfinite : PositiveInfiniteStatement
+```
+
+上述证明没有使用 `sorry`、`admit`、自定义 `axiom` 或 `native_decide`。
 
 ## Statement-fidelity 风险
 
@@ -348,8 +375,8 @@ LRAT theorem。
 2. **整数域。** Justin Sun Prize 的标题简写为“on the integers”，但
    Erdős Problem #895 的完整区间版本明确给出 `{1,...,n}`。当前项目依用户
    指定采用正自然数有限区间，而不是全体 `ℤ`。
-3. **阈值证据。** `18` 来自公开网页对 SAT-assisted personal
-   communication 的记录；当前仓库尚无可重放 certificate，所以这里只把
-   `Finite18` 记为待证命题。
+3. **阈值来源。** `18` 的历史来源仍是公开网页所述的 SAT-assisted personal
+   communication；不过本仓库现在已有独立生成并由 Lean kernel 重放的 LRAT
+   certificate，因此形式化结论本身不依赖该历史证明材料。
 4. **不主张最小性。** `HoldsFrom18` 只说所有 `n ≥ 18` 成立；它没有断言
    `18` 是最小可能阈值。

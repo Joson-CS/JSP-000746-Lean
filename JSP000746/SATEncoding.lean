@@ -73,6 +73,24 @@ private def triangleAC (t : TriangleIndex) : EdgeVar :=
 private def triangleBC (t : TriangleIndex) : EdgeVar :=
   ⟨(triangleB t, triangleC t), t.2.2⟩
 
+@[simp] theorem triangleAB_left_value (t : TriangleIndex) :
+    (triangleAB t).1.1.1 = t.1.1.1 := rfl
+
+@[simp] theorem triangleAB_right_value (t : TriangleIndex) :
+    (triangleAB t).1.2.1 = t.1.2.1.1 := rfl
+
+@[simp] theorem triangleAC_left_value (t : TriangleIndex) :
+    (triangleAC t).1.1.1 = t.1.1.1 := rfl
+
+@[simp] theorem triangleAC_right_value (t : TriangleIndex) :
+    (triangleAC t).1.2.1 = t.1.2.2.1 := rfl
+
+@[simp] theorem triangleBC_left_value (t : TriangleIndex) :
+    (triangleBC t).1.1.1 = t.1.2.1.1 := rfl
+
+@[simp] theorem triangleBC_right_value (t : TriangleIndex) :
+    (triangleBC t).1.2.1 = t.1.2.2.1 := rfl
+
 /-- The clause `¬ab ∨ ¬ac ∨ ¬bc` forbidding one triangle. -/
 def triangleClause (t : TriangleIndex) : Clause :=
   [⟨triangleAB t, false⟩, ⟨triangleAC t, false⟩, ⟨triangleBC t, false⟩]
@@ -114,6 +132,24 @@ private def additiveASum (t : AdditiveIndex) : EdgeVar :=
 
 private def additiveBSum (t : AdditiveIndex) : EdgeVar :=
   ⟨(additiveB t, additiveSum t), additiveB_lt_sum t⟩
+
+@[simp] theorem additiveAB_left_value (t : AdditiveIndex) :
+    (additiveAB t).1.1.1 = t.1.1.1 := rfl
+
+@[simp] theorem additiveAB_right_value (t : AdditiveIndex) :
+    (additiveAB t).1.2.1 = t.1.2.1 := rfl
+
+@[simp] theorem additiveASum_left_value (t : AdditiveIndex) :
+    (additiveASum t).1.1.1 = t.1.1.1 := rfl
+
+@[simp] theorem additiveASum_right_value (t : AdditiveIndex) :
+    (additiveASum t).1.2.1 = t.1.1.1 + t.1.2.1 := rfl
+
+@[simp] theorem additiveBSum_left_value (t : AdditiveIndex) :
+    (additiveBSum t).1.1.1 = t.1.2.1 := rfl
+
+@[simp] theorem additiveBSum_right_value (t : AdditiveIndex) :
+    (additiveBSum t).1.2.1 = t.1.1.1 + t.1.2.1 := rfl
 
 /--
 The clause `ab ∨ a(a+b) ∨ b(a+b)`: at least one edge must be present, so the

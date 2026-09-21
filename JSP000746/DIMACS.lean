@@ -118,6 +118,18 @@ def edgeToVar (e : EdgeVar) : DIMACSVar := edgeIndexEquiv e
 /-- The stable one-based DIMACS index as a natural number. -/
 def edgeToIndex (e : EdgeVar) : ℕ := (edgeToVar e).1
 
+/-
+Closed form of the lexicographic one-based edge number.  If `e = (u,v)`
+with `u < v`, there are `(u-1)(36-u)/2` edges before the `u` block and
+`v-u` positions up to `v` inside that block.
+-/
+set_option maxRecDepth 100000 in
+@[simp]
+theorem edgeToVar_val_closed (e : EdgeVar) :
+    (edgeToVar e).1 =
+      ((e.1.1.1 - 1) * (36 - e.1.1.1)) / 2 + (e.1.2.1 - e.1.1.1) := by
+  decide +revert
+
 /-- Reverse the stable DIMACS numbering. -/
 def indexToEdge (i : DIMACSVar) : EdgeVar := edgeIndexEquiv.symm i
 
